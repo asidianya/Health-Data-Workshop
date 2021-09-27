@@ -1,0 +1,105 @@
+---
+title: "Tidyverse"
+author: "Nnenna Asidianya"
+date: "9/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## ggplot2
+
+
+```{r}
+library(tidyverse)
+CARS = mtcars
+attach(CARS)
+
+#check the scatterplot for mpg against weight
+
+ggplot(CARS, aes(x=wt, y=mpg, color=as.factor(cyl)))+geom_point()+scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))
+
+
+#base R
+
+boxplot(mpg~cyl, col=topo.colors((3)))
+
+#ggplot
+
+ggplot(CARS, aes(x=as.factor(cyl), y=mpg,color=as.factor(cyl)))+geom_boxplot()+scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))
+```
+
+Note: If I am interested in the characteristics of just one variable. 
+
+```{r}
+ggplot(CARS, aes(x=wt))+geom_histogram(bins=5, col="black", fill="red")
+```
+
+
+## readr
+
+Notice in example below the data frames are seemingly read into the global environment in a similar manner.This is in part because the CSV file contains headers for the categories so base R did not need to create a new row.
+
+```{r}
+#tidyverse
+ages = read_csv("ages.csv")
+attach(ages)
+
+#baseR
+ages2 = read.csv("ages.csv")
+```
+
+## tidyr
+
+This is the modified CSV where the variable labels are removed.
+
+```{r}
+AGE = read_csv("AGE.csv", col_names = F)
+
+AGE2 = read.csv("AGE.csv", header = F)
+```
+
+We often need to switch between wide and long data format. The `ages_wide` tibble is currently in wide format. To get it in long format we can use `pivot_longer`
+
+```{r}
+
+ages_wide<-ages %>% pivot_wider(names_from = category, values_from = Active:Deaths)
+
+#view(ages_wide)
+
+age_long<-ages_wide %>% gather( Var, Val, -Date) 
+```
+
+
+## dplyr 
+
+```{r}
+
+#in base R
+category = fct_relevel(category, "Under 20", "20-29", "30-39", 
+                            "40-49", "50-59", "60-69", "70-79","80-89",
+                            "90-99", "Unknown")
+
+ages_update  = data.frame(ages, category)
+
+
+
+df<-ages %>% mutate(category = fct_relevel(category, "Under 20", "20-29", "30-39", 
+                            "40-49", "50-59", "60-69", "70-79","80-89",
+                            "90-99", "Unknown")) %>%  filter(!category=="Unknown") %>% 
+  group_by(Date) %>% 
+  mutate(total_cases=Active+Resolved) %>% 
+  mutate(pct_cases=100*(total_cases/sum(total_cases)))
+
+p1<-ggplot(data = df, aes(x = category, y = pct_cases , fill =Date)) +
+  geom_bar(stat = "identity", position = position_dodge(), col="black", alpha = 0.75)+
+  labs(x = "Ages in Ontario per Decade", y = "Percent", title = "COVID Cases Comparison: Nov. 2020 vs. Feb, 2021 ")
+
+p1<-p1 +  scale_fill_manual("legend", values = c("20-Nov" = "orange", "21-Feb" = "blue"))
+
+
+```
+
+
